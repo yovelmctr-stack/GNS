@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GroundFix — GNSS-Independent Navigation for Low-Altitude UAVs</title>
+<meta name="description" content="A terrestrial UWB anchor network fused with inertial sensing keeps low-altitude UAVs precisely located when GNSS can't reach them.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grid-overlay" aria-hidden="true"></div>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <a href="#top" class="brand">
+    <svg class="brand-mark" width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+      <circle cx="4" cy="21" r="2" fill="var(--teal)"/>
+      <circle cx="22" cy="21" r="2" fill="var(--teal)"/>
+      <circle cx="13" cy="21" r="2" fill="var(--teal)"/>
+      <circle cx="13" cy="6" r="2.5" fill="var(--amber)"/>
+      <path d="M4 21 L13 6 L22 21" stroke="var(--amber)" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.8"/>
+    </svg>
+    <span>GROUNDFIX</span>
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <a href="#problem">Problem</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#robustness">Robustness</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#applications">Applications</a>
+  </nav>
+  <a class="nav-cta" href="https://github.com/" target="_blank" rel="noopener">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    <span>View on GitHub</span>
+  </a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="top">
+    <div class="hero-copy">
+      <p class="eyebrow">GNSS-INDEPENDENT LOCAL NAVIGATION</p>
+      <h1>Navigate<br><span class="accent-amber">without the sky.</span></h1>
+      <p class="hero-sub">A terrestrial UWB anchor network fused with inertial sensing keeps
+        low-altitude UAVs precisely located when GNSS can't reach them —
+        indoors, in urban canyons, under terrain shadow, or under jamming.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/" target="_blank" rel="noopener">Open the repository</a>
+        <a class="btn btn-ghost" href="#architecture">Read the architecture ↓</a>
+      </div>
+      <dl class="hero-stats">
+        <div><dt>Ranging method</dt><dd>UWB time-of-flight</dd></div>
+        <div><dt>Fusion core</dt><dd>Extended Kalman Filter</dd></div>
+        <div><dt>Degraded mode</dt><dd>IMU dead-reckoning</dd></div>
+      </dl>
+    </div>
+
+    <div class="hero-panel" role="img" aria-label="Live simulation of a UAV computing its position from three ground anchors using UWB ranging">
+      <div class="panel-frame">
+        <div class="panel-titlebar">
+          <span class="dot dot-live" aria-hidden="true"></span>
+          <span>RANGING CONSOLE</span>
+          <span class="panel-titlebar-right">SIM</span>
+        </div>
+        <canvas id="radar" width="600" height="440"></canvas>
+        <div class="telemetry">
+          <div class="telemetry-row"><span>ANCHOR A</span><span id="rangeA">— m</span></div>
+          <div class="telemetry-row"><span>ANCHOR B</span><span id="rangeB">— m</span></div>
+          <div class="telemetry-row"><span>ANCHOR C</span><span id="rangeC">— m</span></div>
+          <div class="telemetry-row telemetry-divider"><span>FIX</span><span id="fixCoord">— , —</span></div>
+          <div class="telemetry-row"><span>STATUS</span><span id="fixStatus" class="status-locked">LOCKED</span></div>
+        </div>
+      </div>
+      <p class="panel-caption">Simulated multilateration — anchors ping, ranges resolve, position converges.</p>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEM ============ -->
+  <section class="section" id="problem">
+    <p class="eyebrow">THE PROBLEM</p>
+    <h2>The sky isn't always available.</h2>
+    <p class="section-lede">UAV autonomy leans hard on satellite fixes — but low-altitude flight
+      routinely happens in exactly the places GNSS struggles: under cover, between structures,
+      in terrain shadow, or under deliberate interference.</p>
+
+    <div class="card-grid">
+      <article class="card">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <rect x="5" y="16" width="6" height="19" stroke="var(--amber)" stroke-width="1.6"/>
+          <rect x="14" y="8" width="6" height="27" stroke="var(--amber)" stroke-width="1.6"/>
+          <rect x="23" y="20" width="6" height="15" stroke="var(--amber)" stroke-width="1.6"/>
+          <rect x="32" y="4" width="6" height="31" stroke="var(--amber)" stroke-width="1.6"/>
+        </svg>
+        <h3>Urban canyons</h3>
+        <p>Reflective facades and blocked sky views cause multipath and dropped satellite locks.</p>
+      </article>
+      <article class="card">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M4 20 L20 6 L36 20" stroke="var(--amber)" stroke-width="1.6"/>
+          <rect x="8" y="20" width="24" height="14" stroke="var(--amber)" stroke-width="1.6"/>
+          <line x1="20" y1="24" x2="20" y2="34" stroke="var(--amber)" stroke-width="1.6"/>
+        </svg>
+        <h3>Indoor &amp; covered areas</h3>
+        <p>Warehouses, tunnels, and hangars remove satellite line-of-sight entirely.</p>
+      </article>
+      <article class="card">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M3 32 L14 12 L20 22 L25 15 L37 32 Z" stroke="var(--amber)" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <h3>Mountainous terrain</h3>
+        <p>Sky occlusion and steep reflections corrupt satellite ranging accuracy.</p>
+      </article>
+      <article class="card">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M6 20 L16 20 L19 10 L23 30 L26 20 L34 20" stroke="var(--amber)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <h3>Jamming &amp; spoofing</h3>
+        <p>RF interference or hostile spoofing makes a satellite fix actively unreliable.</p>
+      </article>
+    </div>
+
+    <div class="callout">
+      <span class="callout-label">THE GAP</span>
+      <p>Low-altitude UAVs need continuous, accurate positioning precisely in the places
+        GNSS is weakest — so the navigation source has to come from the ground, not the sky.</p>
+    </div>
+  </section>
+
+  <!-- ============ ARCHITECTURE ============ -->
+  <section class="section" id="architecture">
+    <p class="eyebrow">HOW A FIX IS COMPUTED</p>
+    <h2>Ranges in. A locked position out.</h2>
+    <p class="section-lede">Fixed anchors resolve distance to the UAV by time-of-flight. Those
+      ranges are combined with onboard sensing inside an Extended Kalman Filter, which rejects
+      bad readings before they can corrupt the estimate.</p>
+
+    <div class="pipeline">
+      <div class="pipeline-col pipeline-inputs">
+        <div class="chip">UWB anchors <span>time-of-flight ranging</span></div>
+        <div class="chip">IMU <span>accelerometer + gyroscope</span></div>
+        <div class="chip">Barometer <span>relative altitude</span></div>
+        <div class="chip">Magnetometer <span>heading reference</span></div>
+        <div class="chip">Optical flow <span>ground-relative velocity</span></div>
+      </div>
+
+      <div class="pipeline-arrows" aria-hidden="true">
+        <svg viewBox="0 0 100 300" preserveAspectRatio="none">
+          <line x1="0" y1="30" x2="100" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="0" y1="90" x2="100" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="0" y1="150" x2="100" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="0" y1="210" x2="100" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="0" y1="270" x2="100" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <div class="pipeline-col pipeline-core">
+        <div class="ekf-box">
+          <p class="ekf-label">EXTENDED KALMAN FILTER</p>
+          <p class="ekf-cycle">predict <span>→</span> correct <span>→</span> fault-check</p>
+          <p class="ekf-note">Measurement-consistency checks reject outlier ranges before
+            they reach the state estimate.</p>
+        </div>
+      </div>
+
+      <div class="pipeline-arrows pipeline-arrow-out" aria-hidden="true">
+        <svg viewBox="0 0 60 40" preserveAspectRatio="none">
+          <line x1="0" y1="20" x2="60" y2="20" stroke="var(--amber)" stroke-width="2"/>
+          <path d="M50 12 L60 20 L50 28" stroke="var(--amber)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="pipeline-col pipeline-output">
+        <div class="output-box">
+          <p class="output-label">FUSED STATE ESTIMATE</p>
+          <ul>
+            <li>Position — x, y, z</li>
+            <li>Velocity &amp; heading</li>
+            <li>Navigation continuity flag</li>
+            <li>Fault / integrity status</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROBUSTNESS ============ -->
+  <section class="section section-dark" id="robustness">
+    <p class="eyebrow eyebrow-light">STAYING LOCKED WHEN RF LIES</p>
+    <h2 class="h-light">RF ranging is noisy. The filter assumes that.</h2>
+    <p class="section-lede lede-light">Multipath, non-line-of-sight anchors, and interference
+      will happen. The system is built to catch a bad measurement before it degrades the
+      position estimate.</p>
+
+    <div class="card-grid card-grid-dark">
+      <article class="card card-dark">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M20 4 L34 10 V19 C34 28 28 34 20 36 C12 34 6 28 6 19 V10 Z" stroke="var(--teal)" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M13 20 L18 25 L27 15" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>Consistency checks</h3>
+        <p>Every new UWB range is cross-validated against the current state estimate before it's accepted.</p>
+      </article>
+      <article class="card card-dark">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <polyline points="4,22 12,22 16,10 22,32 26,18 30,22 36,22" stroke="var(--teal)" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+          <line x1="4" y1="30" x2="36" y2="30" stroke="var(--teal)" stroke-width="1" stroke-dasharray="1 3" opacity="0.6"/>
+        </svg>
+        <h3>Innovation testing</h3>
+        <p>EKF innovation is monitored statistically; measurements outside expected bounds are flagged.</p>
+      </article>
+      <article class="card card-dark">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <circle cx="20" cy="20" r="15" stroke="var(--teal)" stroke-width="1.6"/>
+          <line x1="11" y1="11" x2="29" y2="29" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <h3>Outlier &amp; NLOS rejection</h3>
+        <p>Anchors reporting inconsistent or non-line-of-sight ranges are down-weighted or excluded.</p>
+      </article>
+      <article class="card card-dark">
+        <svg class="card-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <rect x="7" y="12" width="22" height="16" rx="2" stroke="var(--teal)" stroke-width="1.6"/>
+          <rect x="30" y="17" width="3" height="6" fill="var(--teal)"/>
+          <line x1="12" y1="20" x2="24" y2="20" stroke="var(--teal)" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <h3>Graceful degradation</h3>
+        <p>If UWB drops out, IMU, barometer, and optical flow sustain short-term dead reckoning.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ ROADMAP ============ -->
+  <section class="section" id="roadmap">
+    <p class="eyebrow">VALIDATION PATH</p>
+    <h2>From ground rig to flight test.</h2>
+    <p class="section-lede">The fusion pipeline is proven incrementally — de-risked on a wheeled
+      ground platform long before it flies.</p>
+
+    <ol class="timeline">
+      <li><span class="tl-index">01</span><h4>Anchor network setup</h4><p>Deploy and survey fixed UWB anchors with known coordinates.</p></li>
+      <li><span class="tl-index">02</span><h4>Ground platform testing</h4><p>Validate ranging, multilateration, and EKF fusion on a wheeled rig.</p></li>
+      <li><span class="tl-index">03</span><h4>Sensor integration</h4><p>Add IMU, barometer, magnetometer, and optical flow to the stack.</p></li>
+      <li><span class="tl-index">04</span><h4>UAV integration</h4><p>Port the validated pipeline onto the flight controller.</p></li>
+      <li><span class="tl-index">05</span><h4>GNSS-available testing</h4><p>Benchmark accuracy against GNSS ground truth.</p></li>
+      <li><span class="tl-index">06</span><h4>GNSS-denied testing</h4><p>Evaluate performance with GNSS spoofed or unavailable.</p></li>
+    </ol>
+
+    <div class="metric-strip">
+      <div class="metric"><p class="metric-label">Positioning error</p><p class="metric-desc">RMSE / CEP vs. ground truth</p></div>
+      <div class="metric"><p class="metric-label">Latency</p><p class="metric-desc">Ranging to position output</p></div>
+      <div class="metric"><p class="metric-label">Availability</p><p class="metric-desc">% of flight time with a valid fix</p></div>
+      <div class="metric"><p class="metric-label">Nav continuity</p><p class="metric-desc">Tracking through anchor dropouts</p></div>
+    </div>
+  </section>
+
+  <!-- ============ APPLICATIONS ============ -->
+  <section class="section section-dark" id="applications">
+    <p class="eyebrow eyebrow-light">WHERE IT FLIES</p>
+    <h2 class="h-light">Built for the places satellites can't reach.</h2>
+
+    <div class="app-grid">
+      <div class="app-item"><span class="app-dot" aria-hidden="true"></span>UAV testing &amp; R&amp;D facilities</div>
+      <div class="app-item"><span class="app-dot" aria-hidden="true"></span>Disaster-response operations</div>
+      <div class="app-item"><span class="app-dot" aria-hidden="true"></span>Infrastructure inspection, indoor &amp; covered</div>
+      <div class="app-item"><span class="app-dot" aria-hidden="true"></span>Controlled &amp; restricted airspace</div>
+      <div class="app-item"><span class="app-dot" aria-hidden="true"></span>GNSS-denied &amp; contested environments</div>
+    </div>
+  </section>
+
+  <!-- ============ CTA / FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-top">
+      <h2>Low-cost. Scalable. Resilient.</h2>
+      <p>Everything here — anchor firmware, the fusion filter, and the ground-test
+        harness — is meant to be read, forked, and flown.</p>
+      <a class="btn btn-primary" href="https://github.com/" target="_blank" rel="noopener">Open the repository</a>
+    </div>
+    <div class="footer-bottom">
+      <span>GROUNDFIX — GNSS-independent local navigation for low-altitude UAVs</span>
+      <span class="footer-links">
+        <a href="#top">Back to top</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
